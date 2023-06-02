@@ -1237,7 +1237,6 @@ async function deployPhase5(
     const deployer = signer;
 
     const {
-        token,
         balancerPoolFactories,
         balancerVault,
         balancerGaugeFactory,
@@ -1257,7 +1256,7 @@ async function deployPhase5(
         hre,
         new BoosterHelper__factory(deployer),
         "BoosterHelper",
-        [booster.address, token],
+        [booster.address],
         {},
         debug,
         waitForBlocks,
@@ -1474,7 +1473,7 @@ async function deployPhase6(
         hre,
         new BoosterHelper__factory(deployer),
         "BoosterHelper",
-        [booster.address, token],
+        [booster.address],
         {},
         debug,
         waitForBlocks,
