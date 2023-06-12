@@ -7,6 +7,7 @@ import { getSigner } from "../../tasks/utils";
 import { IGaugeController__factory } from "../../types/generated";
 import { configs } from "./constants";
 import { Gauge, GaugeChoice, getGaugeChoices, getGaugeSnapshot, parseLabel } from "./utils";
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
 task("snapshot:result", "Get results for the first proposal that uses non standard labels")
     .addParam("proposal", "The proposal ID of the snapshot")
@@ -40,6 +41,7 @@ task("snapshot:result", "Get results for the first proposal that uses non standa
         // ----------------------------------------------------------
         // Get Gauge Weight Votes
         // ----------------------------------------------------------
+        console.log("Get gauge vote weights");
         const gaugeList = getGaugeChoices();
 
         const results: { choice: string; score: number; percentage: number; address: string }[] = [];
@@ -62,21 +64,32 @@ task("snapshot:result", "Get results for the first proposal that uses non standa
         // Look up the existing vote weight that was previous given to all the gauges
         // ----------------------------------------------------------
 
+        console.log("Get existing weights");
         const gaugeSnapshot = getGaugeSnapshot();
         const voterProxyAddress = "0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2";
         const gaugeControllerAddress = "0xc128468b7ce63ea702c1f104d55a2566b13d3abd";
         const gaugeController = IGaugeController__factory.connect(gaugeControllerAddress, signer);
-        const gaugesWithExistingWeights = await Promise.all(
-            gaugeSnapshot.map(async (gauge: Gauge) => {
+        const gaugesWithExistingWeights = [] as any;
+
+        for (const gauge of gaugeSnapshot) {
+            const [, power] = await gaugeController.vote_user_slopes(voterProxyAddress, gauge.address);
+            gaugesWithExistingWeights.push({ address: gauge.address, label: parseLabel(gauge), existingWeight: power });
+            sleep(1000);
+        }
+
+        for (const gauge of gaugeList) {
+            if (!gaugesWithExistingWeights.find((g: any) => g.address.toLowerCase() === gauge.address.toLowerCase())) {
                 const [, power] = await gaugeController.vote_user_slopes(voterProxyAddress, gauge.address);
-                return { address: gauge.address, label: parseLabel(gauge), existingWeight: power };
-            }),
-        );
+                gaugesWithExistingWeights.push({ address: gauge.address, label: gauge.label, existingWeight: power });
+                sleep(1000);
+            }
+        }
 
         // ----------------------------------------------------------
         // Get New Votes
         // ----------------------------------------------------------
 
+        console.log("Get new votes");
         const totalVotes = 10000;
         const sumOfPercentages = successfulGauges.reduce((acc, x) => acc + x.percentage, 0);
         const weights = successfulGauges.map(gauge => Math.floor((totalVotes * gauge.percentage) / sumOfPercentages));
