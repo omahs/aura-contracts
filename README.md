@@ -4,7 +4,7 @@
 
 ## Security
 
-Smart contract security is a top priority for Aura, [see Security documentation](https://docs.aura.finance/aura/security) .
+Smart contract security is a top priority for Aura, [see Security documentation](https://docs.aura.finance/aura/security).
 
 If you have any feedback or concerns, reach out to `security@aura.finance`
 
